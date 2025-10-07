@@ -2,11 +2,8 @@ FROM n8nio/n8n:latest
 
 USER root
 
-# Installieren von curl und wget für Health-Checks
-RUN apt-get update && \
-    apt-get install -y curl wget && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Installieren von curl und wget für Health-Checks mit Alpine-Paketmanager
+RUN apk add --no-cache curl wget
 
 # Erstellen einer package.json mit den benötigten Abhängigkeiten
 WORKDIR /tmp
