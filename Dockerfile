@@ -1,16 +1,31 @@
 FROM n8nio/n8n:latest
 
+# Root-Rechte für Installation
 USER root
 
-# Direktes Installieren im Zielverzeichnis
-WORKDIR /usr/local/lib/node_modules/n8n
-RUN npm install bs58 @solana/web3.js
+# --- Tools für Healthchecks ---
+RUN apt-get update && \
+    apt-get install -y curl wget && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Berechtigungen anpassen (falls nötig)
-RUN chown -R node:node /usr/local/lib/node_modules/n8n/node_modules/bs58 /usr/local/lib/node_modules/n8n/node_modules/@solana
+# --- Eigene Node-Module sauber separat installieren ---
+WORKDIR /home/node/custom_libs
+RUN npm init -y && \
+    npm install \
+      bs58@^5.0.0 \
+      @solana/web3.js@^1.87.6
 
-# Zurück zum n8n-Benutzer wechseln
+# --- Environment Variable für n8n, damit es diese Libs sieht ---
+ENV NODE_PATH=/home/node/custom_libs/node_modules
+ENV N8N_CUSTOM_EXTENSIONS=/home/node/custom_libs
+
+# --- Healthcheck ---
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -fs http://localhost:5678/healthz || wget -q -O - http://localhost:5678/healthz || exit 1
+
+# --- Zurück zu normalem User ---
 USER node
-
-# Arbeitsverzeichnis zurücksetzen
 WORKDIR /home/node
+
+# --- Start (Coolify handled entrypoint) ---
