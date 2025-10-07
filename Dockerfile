@@ -22,3 +22,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 # ---- Zurück zu Standard-User ----
 USER node
 WORKDIR /home/node
+EXPOSE 5678
