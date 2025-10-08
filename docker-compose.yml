@@ -1,27 +1,36 @@
-version: "3.8"
+version: '3.8'
 
 services:
-  app:
-    image: deine-app:latest
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
     restart: unless-stopped
-    environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=user
-      - DB_PASSWORD=pass
-      - DB_NAME=mydatabase
     ports:
-      - "3000:3000"  # optional, je nach App
-
-  db:
-    image: postgres:15
-    restart: unless-stopped
+      - "5678:5678"
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=pass
-      - POSTGRES_DB=mydatabase
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=${DB_HOST}
+      - DB_POSTGRESDB_PORT=${POSTGRES_PORT}
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - wait-for-db
+
+  wait-for-db:
+    image: alpine:latest
+    command: >
+      sh -c "
+        apk add --no-cache postgresql-client && 
+        until pg_isready -h ${DB_HOST} -p 5432; do 
+          echo waiting for db...; 
+          sleep 2; 
+        done
+      "
+    depends_on: []
+    restart: "no"
 
 volumes:
-  db-data:
+  n8n_data:
